@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>      
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>scan</title>     
+    <link href="/static/bootstrap/dist/css/bootstrap.css" rel="stylesheet"></link>
+    {% block head_css %}
+         <link href="/static/css/scan.css" rel="stylesheet"></link>
+    {% end %}
+    
+    {% block extends_css %}
+    {% end %}
+</head>     
+<body>      
+    <!-- sandbox="allow-same-origin allow-scripts" -->
+    <div class="main" class='main'>
+        <div class="body">
+            {% block left_d %}
+            <div class="left col-md-8 col-sm-8 col-xs-12">
+            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" sandbox="allow-same-origin allow-scripts" name="selector" src="http://www.qidian.com"  onload="addDocClickEvt(this)" style="width: 100%;" ></iframe></div>') %}
+            {% block left %}
+
+            {% end %}
+
+            {% end %}
+                
+            </div>
+
+            {% block content_d %}
+            <div class="content col-md-5 col-sm-4 col-xs-9">
+                <div class="head">
+                {% block head %}
+                    <h1>Hacker Sites <small>ok?</small></h1>
+                    <p>scan</p>
+                    {% module Files() %}
+                {% end %}
+                </div>
+            {% block content %}
+                <p>test</p>
+                
+            {% end %}
+            </div>
+            {% end %}
+        </div>
+        <div class="tail">
+        {% block tail %}
+        {% end %}
+        </div>
+    </div>
+    
+
+    <script src="/static/jquery/dist/jquery.min.js"></script>
+    <script src="/static/bootstrap/dist/js/bootstrap.js"></script>
+    {% block body_js %}
+        <script src="/static/js/scan.js"></script>
+        <!--
+        <script type="text/javascript">
+            websocket = new web_client("ws://localhost:8080/[url]")
+            websocket.on_msg(function(json){
+                console.log(json);
+            }
+        </script> 
+        -->
+    {% end %}
+
+    {% block extends_js %}
+
+    {% end %}
+</body>     
+</html>
+    
