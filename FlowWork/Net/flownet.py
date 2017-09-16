@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 import os, socket
 from qlib.log import show
+from bs4 import BeautifulSoup as BS
 
 phantomjs_path = os.popen("which phantomjs").read().strip()
 if not phantomjs_path:
@@ -37,7 +38,8 @@ def test_proxy(proxy):
 
 
 class FLowNet:
-    def __init__(self, proxy=False, load_img=False, random_agent=False,agent=None,**options):
+    keys = Keys
+    def __init__(self, url, proxy=False, load_img=False, random_agent=False,agent=None,**options):
         
         if proxy:
             if not test_proxy(proxy):
@@ -72,20 +74,91 @@ class FLowNet:
         if timeout:
             self.phantom.set_page_load_timeout(int(timeout))
         self.dcap = dcap
+        self.datas = []
+        self.go(url)
 
     def go(self, url):
         self.phantom.get(url)
 
-    def __call__(self, selectID, action, *args, save_data=False, **kargs):
-        if selectID.strip().startswith("."):
-            target = self.phantom.find_element_by_class_name(selectID[1:])
-        elif selectID.strip().startswith("#"):
-            target = self.phantom.find_element_by_id(selectID[1:])
+    def _wait(self, selector, timeout=7):
+        try:
+            if '.' in selector:
+                wait = WebDriverWait(self.phantom,timeout).until(
+                    EC.presence_of_element_located((By.CLASS_NAME,selector[1:])))
+            elif '#' in selector:
+                wait = WebDriverWait(self.phantom,timeout).until(
+                    EC.presence_of_element_located((By.ID,selector[1:])))
+            else:
+                wait = WebDriverWait(self.phantom,timeout).until(
+                    EC.presence_of_element_located((By.TAG_NAME,selector)))
+        except Exception as e:
+            raise e
+
+    def save_tmp(self, key=None):
+        if self.phantom.current_url in self.datas:
+            self.datas[self.phantom.current_url].append(self.phantom.page_source)
         else:
-            target = self.phantom.find_element_by_tag_name(selectID[1:])
-        if hasattr(target, action):
-            func = getattr(target, action)
-            func(*args, **kargs)
-            
+            self.datas[self.phantom.current_url] = [self.phantom.page_source]
+
+    def screenshot(self, *names):
+        if len(names) > 0:
+            self.phantom.get_screenshot_as_file('/tmp/' + names[0]+".png")
+        else:
+            self.phantom.get_screenshot_as_file('/tmp/one.png')
+
+    def do(self, selectID, *args, save_screen=False,save_data=False, wait=None, callback=None,**kargs):
+        """
+        css select mode :
+            div .
+        """
+        selectID = selectID.strip()
+        
+        self._wait(selectID)
+        res = None
+        target = self.find(selectID)
+        
+        if len(args) == 1:
+            target.send_keys(args[0])
+        elif len(args) == 0:
+            target.click()
+        else:
+            raise Exception("no such operator!!")
+
+
+        if wait:
+            self._wait(wait)
+
+        if callback:
+            callback(self.phantom.page_source)
+
+        if save_data:
+            if isinstance(save_data, bool):
+                self.save_tmp()
+            elif isinstance(save_data, str):
+                # a fliter ...
+                pass
+        if save_screen:
+            self.screenshot(self.phantom.current_url)
+
+        return self
+
+    def find(self, selectID):
+        selectIDs = selectID.split(">")
+        target = self.phantom
+        targets = []
+        for SLE in selectIDs:
+            if SLE.startswith("."):
+                for target in targets:
+                    targets = target.find_elements_by_class_name(SLE[1:])
+            elif SLE.startswith("#"):
+                targets = target.find_elements_by_id(SLE[1:])
+            else:
+                targets = target.find_elements_by_tag_name(SLE[1:])
+        
+    
+    def html(self):
+        return self.phantom.page_source
+
+
 
 
