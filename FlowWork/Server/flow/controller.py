@@ -5,6 +5,7 @@
 import json
 import tornado
 import tornado.web
+from tornado import httpclient
 from tornado.websocket import WebSocketHandler
 
 
@@ -88,6 +89,51 @@ class ScanHandler(BaseHandler):
         # L is log function , which include ok , info , err , fail, wrn
         self.L.ok('got')
         return self.render(self.template, post_page="/scan")
+
+    @tornado.web.asynchronous
+    def post(self):
+        # you should get some argument from follow 
+        post_args = self.get_argument("some_argument")
+        # .....
+        # for parse json post
+        # post_args = json.loads(self.request.body.decode("utf8", "ignore"))['msg']
+        
+        # redirect or reply some content
+        # self.redirect()  
+        self.write("hello world")
+        self.finish()
+    
+
+
+class RelayHandler(BaseHandler):
+    
+    def prepare(self):
+        super(RelayHandler, self).prepare()
+        self.template = "template/relay.html"
+
+    @tornado.web.asynchronous
+    def get(self):
+        # L is log function , which include ok , info , err , fail, wrn
+        url = self.get_argument('target')
+        if 'http' not in url:
+            url = 'http://' + url
+        http_client = httpclient.HTTPClient()
+        try:
+            response = http_client.fetch(url)
+            body = response.body
+            self.write(body)
+            # self.finish()
+        except httpclient.HTTPError as e:
+            # HTTPError is raised for non-200 responses; the response
+            # can be found in e.response.
+            print("Error: " + str(e))
+            self.write(e)
+        except Exception as e:
+            # Other errors are possible, such as IOError.
+            print("Error: " + str(e))
+            self.write(e)
+        self.finish()
+        
 
     @tornado.web.asynchronous
     def post(self):

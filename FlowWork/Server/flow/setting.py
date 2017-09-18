@@ -49,6 +49,7 @@ appication = tornado.web.Application([
                 (r'/',IndexHandler),
                 # add some new route to router
 		(r'/scan',ScanHandler),
+		(r'/relay',RelayHandler),
 #<route></route>
                 # (r'/main',MainHandler),
          ],**Settings)

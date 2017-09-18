@@ -1,57 +1,26 @@
-$('#iframe-content').load(function(){
-// //     alert("ok")
+// $('#iframe-content').load(function(){
 
-    
-//     var iframe = $('#iframe-content').contents();
-//     alert($(this).html());
-// //     console.log(iframe);
-// //     iframe.find("p").click(function(e) {
-// //             i = $(e.target);
-// //         console.log("p",i);
-// //     })
+//     after_load();
 
-// //     iframe.find("div").click(function(e) {
-// //         i = $(e.target);
-// //         alert("div",i);
-// //     })
+// });
 
-// //     // iframe.find(document).click(function(e){
-// //             // i = $(e.target);
-// //         // console.log("o ",i);
 
-// })
-
-        
-
-// // });
-
-// // var myConfObj = {
-// //   iframeMouseOver : false
-// // }
-// // window.addEventListener('blur',function(){
-// //   if(myConfObj.iframeMouseOver){
-// //     console.log('Wow! Iframe Click!');
-// //   }
-// // });
-
-// // document.getElementById('iframe-content').addEventListener('mouseover',function(){
-// //    myConfObj.iframeMouseOver = true;
-// // });
-// // document.getElementById('iframe-content').addEventListener('mouseout',function(e){
-// //     myConfObj.iframeMouseOver = false;
-// //     console.log(e);
-    $("a").click(function(e){
-        alert("div",e.target);
+function after_load(){
+    $(".process-bar-load").modal();
+    $(window.frames[0].document).click(function(e){
+        console.log(e.target)
+        s = $(e.target)
+        idv = s.attr('id')
+        clv = s.attr('class')
+        tv = e.target.tagName
+        $("#attrs").append("<li>"+tv + "." + clv+"#"+idv);
     })
-});
-
-
-// function addEvent(o, evt, func) {
-//     if (o.addEventListener) o.addEventListener(evt, func, false);
-//     else if (o.attachEvent) o.attachEvent('on' + evt, func);
-// }
-
-// function addDocClickEvt(ifr) {
-//     addEvent(ifr.contentWindow.document, click, function () {alert('点击了iframe里面的内容') });
-// }
-
+    $(window.frames[0].document).find("input").focus(function(e){
+        console.log('in:',e.target)
+        s = $(e.target)
+        idv = s.attr('id')
+        clv = s.attr('class')
+        tv = e.target.tagName
+        $("#attrs").append("<li>"+tv + "." + clv+"#"+idv);
+    })    
+}

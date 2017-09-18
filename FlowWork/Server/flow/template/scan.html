@@ -11,15 +11,16 @@
     {% end %}
     
     {% block extends_css %}
+
     {% end %}
 </head>     
-<body>      
+<body style="background-color:#dcdcdc;">      
     <!-- sandbox="allow-same-origin allow-scripts" -->
     <div class="main" class='main'>
         <div class="body">
             {% block left_d %}
             <div class="left col-md-8 col-sm-8 col-xs-12">
-            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" sandbox="allow-same-origin allow-scripts" name="selector" src="http://www.qidian.com"  onload="addDocClickEvt(this)" style="width: 100%;" ></iframe></div>') %}
+            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" onload="after_load()"  sandbox="allow-same-origin allow-scripts" name="selector" src="/relay?target=http://www.qidian.com"   style="width: 100%;border: 0px" ></iframe></div>') %}
             {% block left %}
 
             {% end %}
@@ -29,16 +30,19 @@
             </div>
 
             {% block content_d %}
-            <div class="content col-md-5 col-sm-4 col-xs-9">
+            <div class="content col-md-4 col-sm-4 col-xs-9">
                 <div class="head">
                 {% block head %}
-                    <h1>Hacker Sites <small>ok?</small></h1>
-                    <p>scan</p>
-                    {% module Files() %}
+                    <h1>Scan this Site. <small>ok?</small></h1>
+                    
+                    {% module Inputs('text:domain', action='javascript:go()') %}
+                    <ol id='attrs' class="breadcrumb">
+                      
+                    </ol>
                 {% end %}
                 </div>
             {% block content %}
-                <p>test</p>
+                
                 
             {% end %}
             </div>
@@ -66,7 +70,19 @@
     {% end %}
 
     {% block extends_js %}
-
+    <script type="text/javascript">
+        function go(){
+            v = $("#id-domain").val()
+            $("#iframe-content").attr("src", "/relay?target=" + v);
+        }
+    </script>
+    <div class="modal fade process-bar-load" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+      <div class="modal-dialog modal-sm" role="document">
+        <div class="modal-content">
+          load ok
+        </div>
+      </div>
+    </div>
     {% end %}
 </body>     
 </html>

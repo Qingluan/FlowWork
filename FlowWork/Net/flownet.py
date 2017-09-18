@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import os, socket
 from qlib.log import show
 from bs4 import BeautifulSoup as BS
@@ -92,6 +92,7 @@ class FLowNet:
                 wait = WebDriverWait(self.phantom,timeout).until(
                     EC.presence_of_element_located((By.TAG_NAME,selector)))
         except Exception as e:
+            self.screenshot('debug')
             raise e
 
     def save_tmp(self, key=None):
@@ -106,18 +107,22 @@ class FLowNet:
         else:
             self.phantom.get_screenshot_as_file('/tmp/one.png')
 
-    def do(self, selectID, *args, save_screen=False,save_data=False, wait=None, callback=None,**kargs):
+    def do(self, selectID, *args, save_screen=True,save_data=False, wait=None, clear=False, callback=None,**kargs):
         """
         css select mode :
             div .
         """
         selectID = selectID.strip()
-        
-        self._wait(selectID)
+        if '>' in selectID:
+            self._wait(selectID.split(">")[-1])
+        else:
+            self._wait(selectID)
         res = None
         target = self.find(selectID)
         
         if len(args) == 1:
+            if clear:
+                target.clear()    
             target.send_keys(args[0])
         elif len(args) == 0:
             target.click()
@@ -126,7 +131,12 @@ class FLowNet:
 
 
         if wait:
-            self._wait(wait)
+            if isinstance(wait, str):
+                self._wait(wait)
+            elif isinstance(wait, int):
+                time.sleep(wait)
+            else:
+                show("unknow wait type: (only: int, str)", color='red')
 
         if callback:
             callback(self.phantom.page_source)
@@ -146,15 +156,36 @@ class FLowNet:
         selectIDs = selectID.split(">")
         target = self.phantom
         targets = []
-        for SLE in selectIDs:
-            if SLE.startswith("."):
-                for target in targets:
-                    targets = target.find_elements_by_class_name(SLE[1:])
-            elif SLE.startswith("#"):
-                targets = target.find_elements_by_id(SLE[1:])
-            else:
-                targets = target.find_elements_by_tag_name(SLE[1:])
-        
+        l = len(selectIDs)
+        for no, SLE in enumerate(selectIDs):
+            try:
+                if SLE.startswith("."):
+                    if ':' in SLE:
+                        n, i = SLE[1:].split(':')
+                        # show(n,i)
+                        target = target.find_elements_by_class_name(n)[int(i)]
+                    else:
+                        target = target.find_element_by_class_name(SLE[1:])
+                elif SLE.startswith("#"):
+                    if ':' in SLE:
+                        n, i = SLE[1:].split(':')
+                        # show(n,i)
+                        target = target.find_elements_by_id(n)[int(i)]
+                    else:
+                        target = target.find_element_by_id(SLE[1:])
+                else:
+                    if ':' in SLE:
+                        n, i = SLE.split(':')
+                        # show(n,i)
+                        target = target.find_elements_by_tag_name(n)[int(i)]
+                    else:
+                        target = target.find_element_by_tag_name(SLE)
+            except NoSuchElementException as e:
+                show("can not found , continue", e)
+                if no == l-1:
+                    raise e
+                continue
+        return target
     
     def html(self):
         return self.phantom.page_source
