@@ -40,16 +40,17 @@ Settings = {
 
 
 ## follow is router
-try:
-    os.mkdir(files_path)
-except FileExistsError:
-    pass
+# try:
+    # os.mkdir(files_path)
+# except FileExistsError:
+    # pass
 #
 appication = tornado.web.Application([
                 (r'/',IndexHandler),
                 # add some new route to router
 		(r'/scan',ScanHandler),
 		(r'/relay',RelayHandler),
+		(r'/actions',ActionsHandler),
 #<route></route>
                 # (r'/main',MainHandler),
          ],**Settings)

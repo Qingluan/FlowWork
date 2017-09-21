@@ -20,7 +20,7 @@
         <div class="body">
             {% block left_d %}
             <div class="left col-md-8 col-sm-8 col-xs-12">
-            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" onload="after_load()"  sandbox="allow-same-origin allow-scripts" name="selector" src="/relay?target=http://www.qidian.com"   style="width: 100%;border: 0px" ></iframe></div>') %}
+            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" onload="after_load()"  sandbox="allow-same-origin allow-scripts" name="selector" src="/relay?target=http://www.baidu.com"   style="width: 100%;border: 0px" ></iframe></div>') %}
             {% block left %}
 
             {% end %}
@@ -36,9 +36,12 @@
                     <h1>Scan this Site. <small>ok?</small></h1>
                     
                     {% module Inputs('text:domain', action='javascript:go()') %}
+                    {% module Inputs('submit:submit:generate', action='javascript:actions()') %}
                     <ol id='attrs' class="breadcrumb">
                       
                     </ol>
+
+
                 {% end %}
                 </div>
             {% block content %}
@@ -57,6 +60,7 @@
 
     <script src="/static/jquery/dist/jquery.min.js"></script>
     <script src="/static/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="/static/js/posts.js"></script>
     {% block body_js %}
         <script src="/static/js/scan.js"></script>
         <!--
@@ -72,8 +76,25 @@
     {% block extends_js %}
     <script type="text/javascript">
         function go(){
+            $(".process-bar-load").modal();
             v = $("#id-domain").val()
             $("#iframe-content").attr("src", "/relay?target=" + v);
+        }
+
+        function actions(){
+            url = $("iframe").attr("src");
+            $.post('/actions',{
+                data: JSON.stringify({
+                    data: actions_chains, 
+                    url: url
+                })
+            }, function( res){
+                
+                $("#iframe-content").attr("src", "/relay?target=" + url+"&actions=" + encodeURIComponent(actions_chains.toString()));
+                $(".process-bar-load").modal();
+                alert('loading');
+
+            })
         }
     </script>
     <div class="modal fade process-bar-load" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">

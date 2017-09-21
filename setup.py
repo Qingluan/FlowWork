@@ -11,6 +11,7 @@ setup(name='FlowWork',
     author_email='darkhackdevil@gmail.com',
     license='MIT',
     zip_safe=False,
+    include_package_data=True,
     packages=find_packages(),
     install_requires=['SocialKit'],
 

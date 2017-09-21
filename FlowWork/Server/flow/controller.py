@@ -7,7 +7,7 @@ import tornado
 import tornado.web
 from tornado import httpclient
 from tornado.websocket import WebSocketHandler
-
+from FlowWork.Net.flownet import FLowNet
 
 class BaseHandler(tornado.web.RequestHandler):
     def prepare(self):
@@ -115,32 +115,73 @@ class RelayHandler(BaseHandler):
     def get(self):
         # L is log function , which include ok , info , err , fail, wrn
         url = self.get_argument('target')
-        if 'http' not in url:
-            url = 'http://' + url
-        http_client = httpclient.HTTPClient()
-        try:
-            response = http_client.fetch(url)
-            body = response.body
-            self.write(body)
-            # self.finish()
-        except httpclient.HTTPError as e:
-            # HTTPError is raised for non-200 responses; the response
-            # can be found in e.response.
-            print("Error: " + str(e))
-            self.write(e)
-        except Exception as e:
-            # Other errors are possible, such as IOError.
-            print("Error: " + str(e))
-            self.write(e)
+        actions = self.get_argument('actions', None)
+
+        if actions:
+            actions = actions.replace(",","\n")
+            print()
+            print(actions)
+            print()
+            f = FLowNet(url=url)
+            f.flow_doc(actions)
+            self.write(f.html())
+            
+        else:
+            if 'http' not in url:
+                url = 'http://' + url
+            http_client = httpclient.HTTPClient()
+            try:
+                response = http_client.fetch(url)
+                body = response.body
+                self.write(body)
+                # self.finish()
+            except httpclient.HTTPError as e:
+                # HTTPError is raised for non-200 responses; the response
+                # can be found in e.response.
+                print("Error: " + str(e))
+                self.write(e)
+            except Exception as e:
+                # Other errors are possible, such as IOError.
+                print("Error: " + str(e))
+                self.write(e)
         self.finish()
         
 
     @tornado.web.asynchronous
     def post(self):
         # you should get some argument from follow 
-        post_args = self.get_argument("some_argument")
+        # data = json.loads(self.get_argument("data"))
         # .....
         # for parse json post
+        # post_args = json.loads(self.request.body.decode("utf8", "ignore"))['msg']
+        
+        # redirect or reply some content
+        # self.redirect()  
+        self.write("hello world")
+        self.finish()
+    
+
+
+class ActionsHandler(BaseHandler):
+    
+    def prepare(self):
+        super(ActionsHandler, self).prepare()
+        self.template = "template/actions.html"
+
+    def get(self):
+        # L is log function , which include ok , info , err , fail, wrn
+        self.L.ok('got')
+        return self.render(self.template, post_page="/acitons")
+
+    @tornado.web.asynchronous
+    def post(self):
+        # you should get some argument from follow 
+        # print(self.request.body)
+        post_args = json.loads(self.get_argument('data'))
+        # .....
+        # for parse json post
+        print(post_args)
+        
         # post_args = json.loads(self.request.body.decode("utf8", "ignore"))['msg']
         
         # redirect or reply some content

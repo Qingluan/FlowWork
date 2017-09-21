@@ -9,8 +9,8 @@ from Qtornado.db_manifest import DbManifest
 from Qtornado.lib import ParseExtendsArgues
 
 try:
-    from model import tables
-    from setting import db_connect_cmd
+    from .model import tables
+    from .setting import db_connect_cmd
 except ImportError as e:
     pass
 
