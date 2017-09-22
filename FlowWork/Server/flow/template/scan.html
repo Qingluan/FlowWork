@@ -35,7 +35,8 @@
                 {% block head %}
                     <h1>Scan this Site. <small>ok?</small></h1>
                     
-                    {% module Inputs('text:domain', action='javascript:go()') %}
+                    {% module Inputs('text:domain','text:proxy',action='javascript:go()') %}
+                    {% module Inputs('submit:submit:go', action='javascript:go()') %}
                     {% module Inputs('submit:submit:generate', action='javascript:actions()') %}
                     <ol id='attrs' class="breadcrumb">
                       
@@ -75,11 +76,17 @@
 
     {% block extends_js %}
     <script type="text/javascript">
-        function go(){
-            $(".process-bar-load").modal();
-            v = $("#id-domain").val()
-            $("#iframe-content").attr("src", "/relay?target=" + v);
-        }
+function go(){
+    $(".process-bar-load").modal();
+    v = $("#id-domain").val();
+    po = $("#id-proxy").val();
+    if(po){
+        $("#iframe-content").attr("src", "/relay?port=" + po + "&target=" + v);    
+    }else{
+        $("#iframe-content").attr("src", "/relay?target=" + v);    
+    }
+    
+}
 
         function actions(){
             url = $("iframe").attr("src");

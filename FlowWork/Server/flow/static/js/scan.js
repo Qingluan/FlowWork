@@ -27,6 +27,27 @@ function after_load(){
             $("#attrs").append("<li>" + ac  + "</li>");
         }
     })
+
+    $(window.frames[0].document).find("a").click(function(e){
+        console.log(e.target)
+        s = $(e.target)
+        idv = "#" + s.attr('id') ? "#" + s.attr('id') : ""
+        clv = "." + s.attr('class') ? "." + s.attr("class").split(" ")[0] : ""
+        tv = e.target.tagName
+        ac = tv  + clv + idv + "/C";
+        
+        tmp = false
+        actions_chains.forEach(function(e){
+            if (e == ac){
+                tmp = true
+            }
+        })
+
+        if (tmp == false){
+            actions_chains.push(ac)
+            $("#attrs").append("<li>" + ac  + "</li>");
+        }
+    })
     // $(window.frames[0].document).find("input")
 
     $(window.frames[0].document).find("input").change(function (e){

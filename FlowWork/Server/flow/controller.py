@@ -116,6 +116,7 @@ class RelayHandler(BaseHandler):
         # L is log function , which include ok , info , err , fail, wrn
         url = self.get_argument('target')
         actions = self.get_argument('actions', None)
+        port = self.get_argument('port', None)
 
         if actions:
             actions = actions.replace(",","\n")
@@ -129,21 +130,28 @@ class RelayHandler(BaseHandler):
         else:
             if 'http' not in url:
                 url = 'http://' + url
-            http_client = httpclient.HTTPClient()
-            try:
-                response = http_client.fetch(url)
-                body = response.body
-                self.write(body)
-                # self.finish()
-            except httpclient.HTTPError as e:
-                # HTTPError is raised for non-200 responses; the response
-                # can be found in e.response.
-                print("Error: " + str(e))
-                self.write(e)
-            except Exception as e:
-                # Other errors are possible, such as IOError.
-                print("Error: " + str(e))
-                self.write(e)
+
+            if port:
+
+                f = FLowNet(url=url, proxy='socks5://127.0.0.1:'+port)
+                res = f.html()
+                self.write(res)
+            else:
+                http_client = httpclient.HTTPClient()
+                try:
+                    response = http_client.fetch(url)
+                    body = response.body
+                    self.write(body)
+                    # self.finish()
+                except httpclient.HTTPError as e:
+                    # HTTPError is raised for non-200 responses; the response
+                    # can be found in e.response.
+                    print("Error: " + str(e))
+                    self.write(e)
+                except Exception as e:
+                    # Other errors are possible, such as IOError.
+                    print("Error: " + str(e))
+                    self.write(e)
         self.finish()
         
 
