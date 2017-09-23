@@ -22,4 +22,5 @@ include FlowWork/server/flow/template/ui_templates/*
 
 include FlowWork/server/flow/static/res/*
 include FlowWork/server/flow/static/res/CN/*
-include FlowWork/server/flow/static/res/region/*
+include FlowWork/Server/flow/static/res/region/*
+include FlowWork/Server.zip
