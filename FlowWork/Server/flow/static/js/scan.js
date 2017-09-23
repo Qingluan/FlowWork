@@ -5,6 +5,14 @@
 // });
 var actions_chains = []
 
+function get_path(e){
+    s = $(e)
+    vid = s.attr("id");
+    vclass = s.attr("class");
+    vname = s.tagName
+
+}
+
 function after_load(){
     $(".process-bar-load").modal();
     $(window.frames[0].document).click(function(e){
