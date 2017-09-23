@@ -1,0 +1,5 @@
+https://www.douban.com
+INPUT.inp#form_email/C
+INPUT.inp#form_email/I'15057141047'
+INPUT.inp#form_password/I'darkdevil'
+INPUT.bn-submit/C

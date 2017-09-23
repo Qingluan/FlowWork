@@ -33,6 +33,7 @@ Settings = {
         'L': LogControl,
         'debug':True,
         "ui_modules": ui,
+        # 'file_path':files_path,
         'autoreload':True,
         'cookie_secret':'This string can be any thing you want',
         'static_path' : static_path,
@@ -40,10 +41,10 @@ Settings = {
 
 
 ## follow is router
-# try:
-    # os.mkdir(files_path)
-# except FileExistsError:
-    # pass
+try:
+    os.mkdir(files_path)
+except FileExistsError:
+    pass
 #
 appication = tornado.web.Application([
                 (r'/',IndexHandler),

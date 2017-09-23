@@ -190,7 +190,7 @@ class Files(Nav):
     """
     def get_len(self, f):
         l = os.stat("./static/files/" + f).st_size
-        s = "%f B" % float(l)
+        s = "%2.2f B" % float(l)
         if l / 1024 > 1:
             s = "%2.2f KB" % float(l/ 1024)
         else:

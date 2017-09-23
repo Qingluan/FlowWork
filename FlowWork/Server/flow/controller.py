@@ -8,6 +8,7 @@ import tornado.web
 from tornado import httpclient
 from tornado.websocket import WebSocketHandler
 from FlowWork.Net.flownet import FLowNet
+import os, time, re
 
 class BaseHandler(tornado.web.RequestHandler):
     def prepare(self):
@@ -147,11 +148,11 @@ class RelayHandler(BaseHandler):
                     # HTTPError is raised for non-200 responses; the response
                     # can be found in e.response.
                     print("Error: " + str(e))
-                    self.write(e)
+                    self.write(str(e))
                 except Exception as e:
                     # Other errors are possible, such as IOError.
                     print("Error: " + str(e))
-                    self.write(e)
+                    self.write(str(e))
         self.finish()
         
 
@@ -189,6 +190,12 @@ class ActionsHandler(BaseHandler):
         # .....
         # for parse json post
         print(post_args)
+        data = post_args['data']
+        url = re.findall(r'target=(.+)', post_args['url'])[0]
+        J = os.path.join
+        with open(J(J(self.settings['static_path'], 'files'), str(time.time()) + ".txt"),  "w") as fp:
+            fp.write(url+"\n")
+            for l in data: fp.write(l+"\n") 
         
         # post_args = json.loads(self.request.body.decode("utf8", "ignore"))['msg']
         

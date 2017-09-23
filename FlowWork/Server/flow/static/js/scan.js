@@ -18,8 +18,8 @@ function after_load(){
     $(window.frames[0].document).click(function(e){
         console.log(e.target)
         s = $(e.target)
-        idv = "#" + s.attr('id') ? "#" + s.attr('id') : ""
-        clv = "." + s.attr('class') ? "." + s.attr("class").split(" ")[0] : ""
+        idv = s.attr('id') ? "#" + s.attr('id') : ""
+        clv = s.attr('class') ? "." + s.attr("class").split(" ")[0] : "" 
         tv = e.target.tagName
         ac = tv  + clv + idv + "/C";
         
@@ -39,8 +39,8 @@ function after_load(){
     $(window.frames[0].document).find("a").click(function(e){
         console.log(e.target)
         s = $(e.target)
-        idv = "#" + s.attr('id') ? "#" + s.attr('id') : ""
-        clv = "." + s.attr('class') ? "." + s.attr("class").split(" ")[0] : ""
+        idv = s.attr('id') ? "#" + s.attr('id') : ""
+        clv = s.attr('class') ? "." + s.attr("class").split(" ")[0] : "" 
         tv = e.target.tagName
         ac = tv  + clv + idv + "/C";
         

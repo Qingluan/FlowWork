@@ -88,7 +88,23 @@ class FLowNet:
         if url:
             self.go(url)
 
-    def flow(self,loc, ac, cursor, screenshot=True, **kargs):
+    def extract_S(self, loc):
+        id_i = loc.find("#")
+        class_i = loc.find(".")
+
+        if id_i < class_i:
+            tag = loc[:id_i].lower()
+            id_s = loc[id_i:class_i]
+            class_s = loc[class_i:]
+
+        else:
+            tag = loc[:class_i].lower()
+            class_s = loc[class_i:id_i]
+            id_s = loc[id_i:]
+
+        return tag, class_s, id_s
+
+    def flow(self,loc, ac, cursor, screenshot=True, submit=False, **kargs):
         """
         exm:
             #main/C
@@ -129,7 +145,8 @@ class FLowNet:
             msg = re.findall(r'\'([\w\W]+)\'', ac)
             show('type:', msg, 'in',loc, text)
             self.do(loc, msg,text=text, **kargs)
-            self.do(loc, '\n',text=text, **kargs)
+            if submit:
+                self.do(loc, '\n',text=text, **kargs)
             # self.do(loc, text=text, **kargs)
         elif ac[0] == 'D':
             show('clear:', loc, text)
@@ -138,6 +155,7 @@ class FLowNet:
             pass
 
         if if_screenshot:
+            show("screen:", cursor)
             self.screenshot(str(cursor))
 
         return cursor
@@ -172,8 +190,9 @@ class FLowNet:
         
         cursor = 0
         wait = 0
-
+        
         while 1:
+            if_submit = False
             if cursor >= len(flows):
                 break
             pre_order = flows[cursor]
@@ -181,6 +200,15 @@ class FLowNet:
             # 结束标志
             if pre_order == '[over]':
                 break
+
+            #  submit flag
+            if "I'" in pre_order:
+                if cursor + 1 < len(flows):
+                    if "I'" in flows[cursor+1]:
+                        if_submit = False
+                    else:
+                        if_submit = True
+
 
             # [正则匹配标志] 为最短路径选取
             if '[' in pre_order:
@@ -205,12 +233,12 @@ class FLowNet:
                    loc, ac =  i.split("/")
                    loc = loc.strip()
                    ac = ac.strip()
-                   cursor =  self.flow(loc, ac, cursor, wait=wait)
+                   cursor =  self.flow(loc, ac, cursor, wait=wait, submit=if_submit)
             else:
                 loc, ac =  pre_order.split("/")
                 loc = loc.strip()
                 ac = ac.strip()
-                cursor =  self.flow(loc, ac, cursor,wait=wait)
+                cursor =  self.flow(loc, ac, cursor,wait=wait, submit=if_submit)
 
 
 
@@ -443,6 +471,12 @@ class FLowNet:
         targets = []
         l = len(selectIDs)
         for no, SLE in enumerate(selectIDs):
+            try:
+                target = target.find_element_by_css_selector(SLE)
+                continue
+            except NoSuchElementException as e:
+                pass
+
             try:
                 if SLE.startswith("."):
                     if ':' in SLE:
