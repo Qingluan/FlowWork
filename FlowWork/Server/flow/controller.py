@@ -9,6 +9,10 @@ from tornado import httpclient
 from tornado.websocket import WebSocketHandler
 from FlowWork.Net.flownet import FLowNet
 import os, time, re
+from hashlib import md5
+from qlib.log import show
+
+H = lambda x: md5(x).hexdigest()
 
 class BaseHandler(tornado.web.RequestHandler):
     def prepare(self):
@@ -118,13 +122,24 @@ class RelayHandler(BaseHandler):
         url = self.get_argument('target')
         actions = self.get_argument('actions', None)
         port = self.get_argument('port', None)
-
+        show(url, actions, port, color='cyan')
         if actions:
-            actions = actions.replace(",","\n")
+            if 'target' in url:
+                u = re.findall(r'target=(.+)',url)[0]
+            else:
+                u = url
+            if 'http' not in u:
+                u = 'http://' + u
+            
+            actions = u + "\n" + actions.replace(",","\n")
             print()
             print(actions)
             print()
-            f = FLowNet(url=url)
+            if port:
+                f = FLowNet(url=url, proxy='socks5://127.0.0.1:'+port)
+            else:
+                f = FLowNet(url=url)
+
             f.flow_doc(actions)
             self.write(f.html())
             
@@ -145,10 +160,13 @@ class RelayHandler(BaseHandler):
                     self.write(body)
                     # self.finish()
                 except httpclient.HTTPError as e:
+                    f = FLowNet(url=url)
+                    res = f.html()
+                    self.write(res)
                     # HTTPError is raised for non-200 responses; the response
                     # can be found in e.response.
-                    print("Error: " + str(e))
-                    self.write(str(e))
+                    # print("Error: " + str(e))
+                    # self.write(str(e))
                 except Exception as e:
                     # Other errors are possible, such as IOError.
                     print("Error: " + str(e))
@@ -193,9 +211,18 @@ class ActionsHandler(BaseHandler):
         data = post_args['data']
         url = re.findall(r'target=(.+)', post_args['url'])[0]
         J = os.path.join
-        with open(J(J(self.settings['static_path'], 'files'), str(time.time()) + ".txt"),  "w") as fp:
-            fp.write(url+"\n")
-            for l in data: fp.write(l+"\n") 
+        lines = url+"\n"
+        for l in data: lines += (l+"\n")
+        lines += "[over]"
+        hh = H(lines.encode("utf8"))
+        dirs = J(self.settings['static_path'], 'files')
+        if hh + ".txt" in os.listdir(dirs):
+            pass
+        else:
+            with open(J(dirs, hh + ".txt"),  "w") as fp:
+                fp.write(lines)
+
+            
         
         # post_args = json.loads(self.request.body.decode("utf8", "ignore"))['msg']
         

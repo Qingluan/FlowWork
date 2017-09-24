@@ -313,7 +313,11 @@ class FLowNet:
 
         else:
             target = self.find(selectID)
-        
+
+        if not target:
+            show("Not found :", selectID, color='yellow', log=True, k='warn')
+            return self
+
         if clear:
             show("clear :",selectID, log=True, k='debug')
             target.clear()
@@ -472,7 +476,11 @@ class FLowNet:
         l = len(selectIDs)
         for no, SLE in enumerate(selectIDs):
             try:
-                target = target.find_element_by_css_selector(SLE)
+                if ':' in SLE:
+                    n, i = SLE.split(':')
+                    target = target.find_elements_by_css_selector(n)[int(i)]
+                else:
+                    target = target.find_element_by_css_selector(SLE)
                 continue
             except NoSuchElementException as e:
                 pass

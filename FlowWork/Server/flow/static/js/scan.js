@@ -19,9 +19,49 @@ function after_load(){
         console.log(e.target)
         s = $(e.target)
         idv = s.attr('id') ? "#" + s.attr('id') : ""
-        clv = s.attr('class') ? "." + s.attr("class").split(" ")[0] : "" 
+        clvs = s.attr('class') ? s.attr("class").split(" ") : []
+        clv = ''
+        
         tv = e.target.tagName
-        ac = tv  + clv + idv + "/C";
+        parent = ''
+
+        if (clvs.length > 0){
+            clv = clvs[0]
+            clvl = $(clv).length
+
+            for(i =0 ; i< clvs.length ; i++){
+                clvt = clvs[i];
+                if ($(clvt).length < clvl){
+                    clv = clvt;
+                    clvl = $(clv).length;
+                }
+
+            }
+            if (clvl > 1){
+                parent = e.target.parent.tagName;
+            }
+        }
+         
+        
+
+        tv = e.target.tagName
+        sele_css = tv  + clv + idv
+        if (parent != ""){
+            sele_css = parent+">" + sele_css;
+        }
+
+        
+
+        test_tar = $(window.frames[0].document).find(sele_css);
+        if (test_tar.length > 1){
+            for (i = 0; i< test_tar.length; i++){
+                if (test_tar[i] == e.target){
+                    sele_css += ":" + i
+                }
+            }
+        }
+
+        ac = sele_css + "/C";
         
         tmp = false
         actions_chains.forEach(function(e){
@@ -40,9 +80,47 @@ function after_load(){
         console.log(e.target)
         s = $(e.target)
         idv = s.attr('id') ? "#" + s.attr('id') : ""
-        clv = s.attr('class') ? "." + s.attr("class").split(" ")[0] : "" 
         tv = e.target.tagName
-        ac = tv  + clv + idv + "/C";
+        clvs = s.attr('class') ? s.attr("class").split(" ") : []
+        clv = ''
+        
+        parent = ''
+
+        if (clvs.length > 0){
+            clv = clvs[0]
+            clvl = $(clv).length
+
+            for(i =0 ; i< clvs.length ; i++){
+                clvt = clvs[i];
+                if ($(clvt).length < clvl){
+                    clv = clvt;
+                    clvl = $(clv).length;
+                }
+
+            }
+            if (clvl > 1){
+                parent = e.target.parent.tagName;
+            }
+        }
+         
+        
+
+        tv = e.target.tagName
+        sele_css = tv  + clv + idv
+        if (parent != ""){
+            sele_css = parent+">" + sele_css;
+        }
+        
+        test_tar = $(window.frames[0].document).find(sele_css);
+        if (test_tar.length > 1){
+            for (i = 0; i< test_tar.length; i++){
+                if (test_tar[i] == e.target){
+                    sele_css += ":" + i
+                }
+            }
+        }
+        
+        ac = sele_css + "/C";
         
         tmp = false
         actions_chains.forEach(function(e){
@@ -60,15 +138,51 @@ function after_load(){
 
     $(window.frames[0].document).find("input").change(function (e){
         s = $(e.target)
+        // 需要选取最少最特征的 css 
+        idv = s.attr('id') ? "#" + s.attr('id') : ""
+        clvs = s.attr('class') ? s.attr("class").split(" ") : []
+        clv = ''
+        parent = ''
 
-        idv = "#" + s.attr('id') ? "#" + s.attr('id') : ""
-        clv = "." + s.attr('class') ? "." + s.attr("class").split(" ")[0] : ""
+        if (clvs.length > 0){
+            clv = clvs[0]
+            clvl = $(clv).length
+
+            for(i =0 ; i< clvs.length ; i++){
+                clvt = clvs[i];
+                if ($(clvt).length < clvl){
+                    clv = clvt;
+                    clvl = $(clv).length;
+                }
+
+            }
+            if (clvl > 1){
+                parent = e.target.parent.tagName;
+            }
+        }
+         
+        
+
         tv = e.target.tagName
+        sele_css = tv  + clv + idv
+        if (parent != ""){
+            sele_css = parent+">" + sele_css;
+        }
+
+        test_tar = $(window.frames[0].document).find(sele_css);
+        if (test_tar.length > 1){
+            for (i = 0; i< test_tar.length; i++){
+                if (test_tar[i] == e.target){
+                    sele_css += ":" + i
+                }
+            }
+        }
+
         va = s.val()
         
         console.log(va)
         
-        ac = tv  + clv + idv + "/I'"+ va + "'"
+        ac = sele_css + "/I'"+ va + "'"
         tmp = false
         actions_chains.forEach(function(e){
             if (e == ac){
