@@ -26,22 +26,26 @@ function after_load(){
         parent = ''
 
         if (clvs.length > 0){
-            clv = clvs[0]
-            clvl = $(clv).length
+            clv = '.' + clvs[0]
+            clvl = $(window.frames[0].document).find(clv).length
 
             for(i =0 ; i< clvs.length ; i++){
-                clvt = clvs[i];
-                if ($(clvt).length < clvl){
+                clvt = '.' + clvs[i];
+                console.log(clvt)
+                if ($(window.frames[0].document).find(clvt).length <= clvl){
                     clv = clvt;
-                    clvl = $(clv).length;
+                    clvl = $(window.frames[0].document).find(clv).length;
                 }
 
             }
-            if (clvl > 1){
-                parent = e.target.parent.tagName;
+            if ($(window.frames[0].document).find(clv).length > 1){
+                console.log("pp")
+                parent = e.target.parentElement.tagName;
             }
         }
+
          
+        
         
 
         tv = e.target.tagName
@@ -87,21 +91,24 @@ function after_load(){
         parent = ''
 
         if (clvs.length > 0){
-            clv = clvs[0]
-            clvl = $(clv).length
+            clv = '.' + clvs[0]
+            clvl = $(window.frames[0].document).find(clv).length
 
             for(i =0 ; i< clvs.length ; i++){
-                clvt = clvs[i];
-                if ($(clvt).length < clvl){
+                clvt = '.' + clvs[i];
+                console.log(clvt)
+                if ($(window.frames[0].document).find(clvt).length <= clvl){
                     clv = clvt;
-                    clvl = $(clv).length;
+                    clvl = $(window.frames[0].document).find(clv).length;
                 }
 
             }
-            if (clvl > 1){
-                parent = e.target.parent.tagName;
+            if ($(window.frames[0].document).find(clv).length > 1){
+                console.log("pp")
+                parent = e.target.parentElement.tagName;
             }
         }
+
          
         
 
@@ -145,21 +152,24 @@ function after_load(){
         parent = ''
 
         if (clvs.length > 0){
-            clv = clvs[0]
-            clvl = $(clv).length
+            clv = '.' + clvs[0]
+            clvl = $(window.frames[0].document).find(clv).length
 
             for(i =0 ; i< clvs.length ; i++){
-                clvt = clvs[i];
-                if ($(clvt).length < clvl){
+                clvt = '.' + clvs[i];
+                console.log(clvt)
+                if ($(window.frames[0].document).find(clvt).length <= clvl){
                     clv = clvt;
-                    clvl = $(clv).length;
+                    clvl = $(window.frames[0].document).find(clv).length;
                 }
 
             }
-            if (clvl > 1){
-                parent = e.target.parent.tagName;
+            if ($(window.frames[0].document).find(clv).length > 1){
+                console.log("pp")
+                parent = e.target.parentElement.tagName;
             }
         }
+
          
         
 
