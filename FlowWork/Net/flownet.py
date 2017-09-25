@@ -150,7 +150,7 @@ class FLowNet:
             # self.do(loc, text=text, **kargs)
         elif ac[0] == 'D':
             show('clear:', loc, text)
-            self.do(loc, clear=True, **kargs)
+            self.do(loc, clear=True,text=text, **kargs)
         elif ac[0] == 'M':
             pass
 
@@ -422,12 +422,40 @@ class FLowNet:
     def back_recur_find(self, css, key):
         targets = self.phantom.find_elements_by_css_selector(css)
         self.soup = BS(self.phantom.page_source, 'lxml')
+        search_ele = ''
+        if '|' in key:
+            search_ele, key = key.split("|")
+
         if len(targets) > 1:
             eles = self.soup(css)
             try:
-                e = self.soup(text=re.compile(key))[0]
+                if search_ele:
+                    cls = ''
+                    ids = ''
+                    if '.' in search_ele:
+                        try:
+                            cls = re.findall(r'(\.[\w\-]+)', search_ele)[0]
+                            search_ele = re.sub(r'(\.[\w\-]+)','', search_ele)
+                            
+                        except IndexError :
+                            pass
+
+                        try:
+                            ids = re.findall(r'(\#[\w\-]+)', search_ele)[0]
+                            search_ele = re.sub(r'(\#[\w\-]+)','', search_ele)
+                        except IndexError :
+                            pass
+                    
+                    if cls or ids:
+                        e = self.soup(search_ele, class_=cls, id=ids, text=re.compile(key))[0]
+                    else:
+                        e = self.soup(search_ele, text=re.compile(key))[0]
+                else:
+                    e = self.soup(text=re.compile(key))[0]
+
             except IndexError:
                 return None
+
             may_e = self.back_inclu(e.parent, css)
 
             if not may_e:
@@ -470,6 +498,13 @@ class FLowNet:
             return targets[0]
 
     def find(self, selectID, fuzzy=None):
+        if '[' in selectID and ']' in selectID:
+            text = re.findall(r'\[(.+?)\]', selectID)[0]
+            loc = re.sub(r'\[(.+?)\]', '', selectID)
+            return self.back_recur_find(loc, text)
+            show('find text:',text)
+
+
         selectIDs = selectID.split(">")
         target = self.phantom
         targets = []

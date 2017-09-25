@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='FlowWork',
-    version='0.2',
+    version='0.3',
     description='a simple way to use mongo db, let db like dict',
     url='https://github.com/Qingluan/.git',
     author='Qing luan',

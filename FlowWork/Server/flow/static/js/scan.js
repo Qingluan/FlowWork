@@ -10,8 +10,21 @@ function get_path(e){
     vid = s.attr("id");
     vclass = s.attr("class");
     vname = s.tagName
+    if (vid != ""){
+        vname = vname + "#" + vid;
+    }
 
+    if (vclass != ""){
+        vname = vname + "." + vclass;   
+    }
+
+    if (vid == '' && vclass == ''){
+        return get_path(e.parentElement) + ">" + vname;
+    }else{
+        return vname;
+    }
 }
+
 
 function after_load(){
     $(".process-bar-load").modal();
@@ -45,13 +58,19 @@ function after_load(){
         }
 
          
+
         
         
 
         tv = e.target.tagName
         sele_css = tv  + clv + idv
+
         if (parent != ""){
             sele_css = parent+">" + sele_css;
+        }
+
+        if (idv == "" && clv == ""){
+            sele_css = get_path(e.target.parentElement) + ">" + sele_css;
         }
 
         
@@ -117,6 +136,11 @@ function after_load(){
         if (parent != ""){
             sele_css = parent+">" + sele_css;
         }
+
+        if (idv == "" && clv == ""){
+            sele_css = get_path(e.target.parentElement) + ">" + sele_css;
+        }
+
         
         test_tar = $(window.frames[0].document).find(sele_css);
         if (test_tar.length > 1){
@@ -177,6 +201,10 @@ function after_load(){
         sele_css = tv  + clv + idv
         if (parent != ""){
             sele_css = parent+">" + sele_css;
+        }
+
+        if (idv == "" && clv == ""){
+            sele_css = get_path(e.target.parentElement) + ">" + sele_css;
         }
 
         test_tar = $(window.frames[0].document).find(sele_css);
