@@ -190,12 +190,24 @@ class FLowNet:
         
         cursor = 0
         wait = 0
-        
+        for_end = False
+        for_start = False
+        mul_start_ele = []
         while 1:
             if_submit = False
             if cursor >= len(flows):
                 break
             pre_order = flows[cursor]
+
+            if pre_order.startswith('for'):
+                for_start = True
+                _, condition, pre_order_starts = pre_order.split("::")
+                mul_start_ele = list(self.finds(pre_order_starts.split("/")[0]))
+
+                
+            if pre_order.startswith("endfor"):
+                for_end = True
+
 
             # 结束标志
             if pre_order == '[over]':
@@ -409,15 +421,102 @@ class FLowNet:
             else:
                 return None, 9999
 
-    def back_inclu(self, t, css):
-        r = t.find(css)
+    def back_include(self, t, css):
+        idv = ''
+        clv = ''
+        old_c = css
+
+        if '.' in css:
+            clv = re.findall(r'(\.[\w\-]+)', css)[0][1:]
+            css = re.sub(r'(\.[\w\-]+)','', css)
+        if '#' in css:
+            idv = re.findall(r'(\#[\w\-]+)', css)[0][1:]
+            css = re.sub(r'(\#[\w\-]+)','', css)
+
+        if '>' in css:
+            css = css.split(">")[-1].lower()
+
+        # show('css:',css,'class:',clv, 'id:',idv)
+        r = t.find(css, class_=clv, id=idv)
         if r:
+            show("got")
             return r
         else:
             if t.parent:
-                return self.back_inclu(t.parent, css)
+                return self.back_include(t.parent, old_c)
             else:
+                show("top", color='red')
                 return None
+
+    def extract_css_select(self,css):
+        ccl = ''
+        idd = ''
+
+        mo = css
+        if '.' in mo:
+            ccl = re.findall(r'(\.[\w\-]+)', mo)[0]
+            mo = re.sub(r'(\.[\w\-]+)','', mo)
+
+        if '#' in mo:
+            idd = re.findall(r'(\#[\w\-]+)', mo)[0]
+            mo = re.sub(r'(\#[\w\-]+)','', mo)
+
+        if '>' in mo:
+            mo = ' > '.join(mo.split('>')).lower()
+            last = mo.split(">")[-1].strip()
+        else:
+            last = mo.strip()
+
+        return mo, ccl, idd,  last
+
+    def back_recur_finds(self, css, key):
+        targets = self.phantom.find_elements_by_css_selector(css)
+        self.soup = BS(self.phantom.page_source, 'lxml')
+        search_ele = ''
+        if '|' in key:
+            search_ele, key = key.split("|")
+
+        if len(targets) > 1:
+            
+            mo,mc,mi,_ = self.extract_css_select(css)
+            eles = self.soup.select(mo + mc + mi)
+            
+            try:
+                if search_ele:
+                    search_ele, cls, ids, last = self.extract_css_select(search_ele)
+                    show('select:', search_ele, "class:",cls, "id:",ids, key)
+                    for e in self.soup(last, class_=cls[1:], id=ids[1:], text=re.compile(key)):
+                        may_e = self.back_include(e.parent, css)
+                        if not may_e:
+                            return None
+
+                        for i, p in enumerate(eles):
+                            if p == may_e:
+                                try:
+                                    yield targets[i]
+                                except IndexError:
+                                    continue
+
+                            
+                    
+                else:
+                    for e in self.soup(text=re.compile(key)):
+                        may_e = self.back_include(e.parent, css)
+                        if not may_e:
+                            return None
+
+                        for i, p in enumerate(eles):
+                            if p == may_e:
+                                try:
+                                    yield targets[i]
+                                except IndexError:
+                                    continue
+
+            except IndexError:
+                pass
+            
+            
+
 
     def back_recur_find(self, css, key):
         targets = self.phantom.find_elements_by_css_selector(css)
@@ -427,36 +526,23 @@ class FLowNet:
             search_ele, key = key.split("|")
 
         if len(targets) > 1:
-            eles = self.soup(css)
+            
+            mo,mc,mi,_ = self.extract_css_select(css)
+            eles = self.soup.select(mo + mc + mi)
+            
             try:
                 if search_ele:
-                    cls = ''
-                    ids = ''
-                    if '.' in search_ele:
-                        try:
-                            cls = re.findall(r'(\.[\w\-]+)', search_ele)[0]
-                            search_ele = re.sub(r'(\.[\w\-]+)','', search_ele)
-                            
-                        except IndexError :
-                            pass
-
-                        try:
-                            ids = re.findall(r'(\#[\w\-]+)', search_ele)[0]
-                            search_ele = re.sub(r'(\#[\w\-]+)','', search_ele)
-                        except IndexError :
-                            pass
+                    search_ele, cls, ids, last = self.extract_css_select(search_ele)
+                    show('select:', search_ele, "class:",cls, "id:",ids, key)
+                    e = self.soup(last, class_=cls[1:], id=ids[1:], text=re.compile(key))[0]
                     
-                    if cls or ids:
-                        e = self.soup(search_ele, class_=cls, id=ids, text=re.compile(key))[0]
-                    else:
-                        e = self.soup(search_ele, text=re.compile(key))[0]
                 else:
                     e = self.soup(text=re.compile(key))[0]
 
             except IndexError:
                 return None
-
-            may_e = self.back_inclu(e.parent, css)
+            
+            may_e = self.back_include(e.parent, css)
 
             if not may_e:
                 return None
@@ -496,6 +582,27 @@ class FLowNet:
 
         else:
             return targets[0]
+
+    def finds(self, selectID, fuzzy=None):
+        if '[' in selectID and ']' in selectID:
+            text = re.findall(r'\[(.+?)\]', selectID)[0]
+            loc = re.sub(r'\[(.+?)\]', '', selectID)
+            return self.back_recur_finds(loc, text)
+            show('find text:',text)
+        else:
+            selectIDs = selectID.split(">")
+            selectID_l = selectIDs[-1]
+            target = self.phantom
+            for no, SLE in enumerate(selectIDs):
+                if SLE == selectID_l:
+                    return target.find_elements_by_css_selector(SLE)
+
+                if ':' in SLE:
+                    n, i = SLE.split(':')
+                    target = target.find_elements_by_css_selector(n)[int(i)]
+                else:
+                    target = target.find_element_by_css_selector(SLE)
+
 
     def find(self, selectID, fuzzy=None):
         if '[' in selectID and ']' in selectID:
