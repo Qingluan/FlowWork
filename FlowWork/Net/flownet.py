@@ -193,6 +193,8 @@ class FLowNet:
         for_end = False
         for_start = False
         mul_start_ele = []
+        for_time = 0
+        for_cursor = -1
         while 1:
             if_submit = False
             if cursor >= len(flows):
@@ -203,10 +205,30 @@ class FLowNet:
                 for_start = True
                 _, condition, pre_order_starts = pre_order.split("::")
                 mul_start_ele = list(self.finds(pre_order_starts.split("/")[0]))
+                for_cursor = cursor
 
                 
             if pre_order.startswith("endfor"):
-                for_end = True
+                
+                if self.check(condition):
+                    for_end = True
+                    pass
+
+
+                if for_time >= len(mul_start_ele):
+                    
+                    for_end = True
+                    
+                
+                if for_end:
+                    for_time = 0
+                    for_cursor = -1
+                    for_start = False
+                    for_end = False
+                else:
+                    for_time += 0
+                    cursor = for_cursor
+                    continue
 
 
             # 结束标志
