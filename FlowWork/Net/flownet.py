@@ -167,9 +167,27 @@ class FLowNet:
                 k,v = l.split(":", maxsplit=1)
                 self.render_text[k] = v
 
+    def check(self, condition):
+        if not hasattr(self,  "flag_for_condition"):
+
+            self.flag_for_condition = condition
+            if isinstance(condition, int):
+                self.count_type = 'int'
+                self.count_for_time = 0
+        else:
+            if self.count_type == 'int'
+                self.count_for_time += 1
+
+        if self.count_for_time >= condition: return True
+        if self.flag_for_condition == 'IndexOver':return True
+        
+        return False
 
 
-    def flow_doc(self, f, render_text=None, timeout=7):
+
+
+
+    def flow_doc(self, f, render_text=None, test=False, timeout=7):
         """
         exm:
             #main/C
@@ -193,7 +211,7 @@ class FLowNet:
         for_end = False
         for_start = False
         mul_start_ele = []
-        for_time = 0
+        for_time = None
         for_cursor = -1
         while 1:
             if_submit = False
@@ -201,15 +219,20 @@ class FLowNet:
                 break
             pre_order = flows[cursor]
 
-            if pre_order.startswith('for'):
+            if pre_order.startswith('for') and for_start != True:
                 for_start = True
-                _, condition, pre_order_starts = pre_order.split("::")
-                mul_start_ele = list(self.finds(pre_order_starts.split("/")[0]))
-                for_cursor = cursor
+                for_time = 0
+                _, condition, pre_order = pre_order.split("::")
+                # mul_start_ele = list(self.finds(pre_order_starts.split("/")[0]))
+                
+
+            elif pre_order.startswith('for') and for_start:
+                _, condition, pre_order = pre_order.split("::")
+                
 
                 
             if pre_order.startswith("endfor"):
-                
+                for_cursor = cursor+1
                 if self.check(condition):
                     for_end = True
                     pass
@@ -221,12 +244,12 @@ class FLowNet:
                     
                 
                 if for_end:
-                    for_time = 0
+                    for_time = None
                     for_cursor = -1
                     for_start = False
                     for_end = False
                 else:
-                    for_time += 0
+                    for_time += 1
                     cursor = for_cursor
                     continue
 
@@ -257,22 +280,33 @@ class FLowNet:
 
             if pre_order.startswith("http"):
                 show("--> ", pre_order)
-                self.go(pre_order) 
+                if test:
+                    show(pre_order, color='yellow')
+                else:
+                    self.go(pre_order) 
                 cursor += 1
                 continue
             show(cursor, pre_order)
             if ',' in pre_order:
                 conditions = pre_order.split(",")
                 for i in conditions:
-                   loc, ac =  i.split("/")
-                   loc = loc.strip()
-                   ac = ac.strip()
-                   cursor =  self.flow(loc, ac, cursor, wait=wait, submit=if_submit)
+                    loc, ac =  i.split("/")
+                    loc = loc.strip()
+                    ac = ac.strip()
+                    if test:
+                        show(loc, ac, cursor, wait, if_submit, color='yellow')
+                        cursor +=1
+                    else:
+                        cursor =  self.flow(loc, ac, cursor, wait=wait, submit=if_submit, for_time=for_time)
             else:
                 loc, ac =  pre_order.split("/")
                 loc = loc.strip()
                 ac = ac.strip()
-                cursor =  self.flow(loc, ac, cursor,wait=wait, submit=if_submit)
+                if test:
+                    show(loc, ac, cursor, wait, if_submit, color='yellow')
+                    cursor +=1
+                else:
+                    cursor =  self.flow(loc, ac, cursor,wait=wait, submit=if_submit, for_time=for_time)
 
 
 
@@ -314,7 +348,7 @@ class FLowNet:
         else:
             self.phantom.get_screenshot_as_file('/tmp/one.png')
 
-    def do(self, selectID, *args, text=None,save_screen=True,save_data=False, wait=None, clear=False, callback=None,**kargs):
+    def do(self, selectID, *args, text=None,save_screen=True,save_data=False, wait=None, clear=False, callback=None, for_time=None,**kargs):
         """
         css select mode :
             div .
@@ -330,7 +364,14 @@ class FLowNet:
         res = None
 
         if text:
-            target = self.back_recur_find(selectID, text)
+            if for_time and isinstance(for_time, int):
+                try:
+                    target = self.back_recur_finds(selectID, text)[for_time]
+                except IndexError:
+                    self.flag_for_condition = 'IndexOver'
+                    return self
+            else: 
+                target = self.back_recur_find(selectID, text)
             if not target:
                 self._wait(1)
                 for i in range(5):
