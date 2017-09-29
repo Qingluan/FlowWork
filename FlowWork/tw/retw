@@ -1,0 +1,6 @@
+https://twitter.com/{user}
+DIV>SPAN.Icon--retweet[span.js-short-timestamp|{key}]/C
+DIV#retweet-with-comment>DIV/I'{com}'
+SPAN.RetweetDialog-tweetActionLabel/C
+[over]
+
