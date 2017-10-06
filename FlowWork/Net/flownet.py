@@ -6,7 +6,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementNotVisibleException
+from selenium.webdriver import  ActionChains
 
 from qlib.log import show
 from bs4 import BeautifulSoup as BS
@@ -175,7 +176,7 @@ class FLowNet:
                 self.count_type = 'int'
                 self.count_for_time = 0
         else:
-            if self.count_type == 'int'
+            if self.count_type == 'int':
                 self.count_for_time += 1
 
         if self.count_for_time >= condition: return True
@@ -233,9 +234,12 @@ class FLowNet:
                 
             if pre_order.startswith("endfor"):
                 for_cursor = cursor+1
-                if self.check(condition):
-                    for_end = True
+                if test:
                     pass
+                else:
+                    if self.check(condition):
+                        for_end = True
+                        pass
 
 
                 if for_time >= len(mul_start_ele):
@@ -363,6 +367,8 @@ class FLowNet:
             self._wait(selectID)
         res = None
 
+
+
         if text:
             if for_time and isinstance(for_time, int):
                 try:
@@ -397,6 +403,10 @@ class FLowNet:
             show("clear :",selectID, log=True, k='debug')
             target.clear()
 
+        #####
+        # actions area
+        self.old_data = self.phantom.page_source
+
         if len(args) == 1:   
             target.send_keys(args[0])
 
@@ -407,10 +417,50 @@ class FLowNet:
 
             else:
                 show("click: ",target.get_attribute("href"))
-                target.click()
+                try:
+                    target.click()
+                except ElementNotVisibleException:
+                    show("normal mode not work , button not visible, try action-chains mode ...", color='yellow')
+                    ac = ActionChains(self.phantom)
+                    ac.move_to_element(target).click().perform()
         else:
             raise Exception("no such operator!!")
 
+
+        #####    
+        # actions after area
+
+        # check if click action is work 
+        if len(args) == 0:
+            if not self._check_if_clicked():
+                pre_nodes_time = 0
+            else:
+                pre_nodes_time = 2
+
+            while pre_nodes_time < 2:
+                show("[",pre_nodes_time,"]","upper node: ", target.tag_name, color='blue')
+                if not self._check_if_clicked():
+                    show('click not work , try javascript mode...')
+                    self.phantom.execute_script("arguments[0].click();", target)
+                    if self._check_if_clicked():
+                        show("javascript mode work", color='green')
+                    else:
+                        show('click not work , try javascript mode...[2]')
+                        time.sleep(1)
+                        self.phantom.execute_script("arguments[0].click();", target)
+                        if self._check_if_clicked():
+                            show("javascript mode work", color='green')
+
+                if not self._check_if_clicked():
+                    target = target.find_element_by_xpath("..")
+                    try:
+                        target.click()
+                    except ElementNotVisibleException:
+                        show("normal mode not work , button not visible, try action-chains mode ...", color='yellow')
+                        ac = ActionChains(self.phantom)
+                        ac.move_to_element(target).click().perform()
+
+                pre_nodes_time += 1
 
         if wait:
             if isinstance(wait, str):
@@ -431,16 +481,6 @@ class FLowNet:
                 pass
         if save_screen:
             self.screenshot()
-
-        # af_hash = md5(self.phantom.page_source.encode("utf8")).hexdigest()
-        # if af_hash == before_hash:
-            # show("no response")
-            # try:
-                # href = target.get_attribute("href")
-                # show("try directly go ...")
-                # self.go(href)
-            # except Exception as e:
-                # pass
 
         return self
 
@@ -502,7 +542,7 @@ class FLowNet:
         # show('css:',css,'class:',clv, 'id:',idv)
         r = t.find(css, class_=clv, id=idv)
         if r:
-            show("got")
+            
             return r
         else:
             if t.parent:
@@ -613,6 +653,7 @@ class FLowNet:
             for i, p in enumerate(eles):
                 if p == may_e:
                     try:
+                        show("got:",i)
                         return targets[i]
                     except IndexError:
 # this is condition when some element loaded but other is loading. this may cause 
@@ -645,6 +686,44 @@ class FLowNet:
 
         else:
             return targets[0]
+
+    def diff(self, old, new):
+        words = old.split()
+        news = new.split()
+        od = dict()
+        nd = dict()
+        for i in words:
+            od[i] = od.get(i, 0) + 1
+        for i in news:
+            nd[i] = nd.get(i, 0) + 1
+
+        w = set(od.items())
+        w2 = set(nd.items())
+        res = len(w2 ^  w)/ len(w2 | w)
+        return res
+
+
+    def _check_if_clicked(self):
+        fen = self.diff(self.old_data, self.phantom.page_source)
+        show("diff:",fen, color='red')
+        if fen < 0.1:
+            return False
+        return True
+
+    def switch(self):
+        main_window_handle = self.phantom.current_window_handle
+        driver.find_element_by_id("ctl00__mainContent_ucObjRegister_btnRegister").click()
+        modal_window = None
+        while not modal_window:
+            for handle in self.phantom.window_handles:
+                if handle != main_window_handle:
+                    modal_window = handle
+                    break
+
+        return modal_window
+
+        
+
 
     def finds(self, selectID, fuzzy=None):
         if '[' in selectID and ']' in selectID:
