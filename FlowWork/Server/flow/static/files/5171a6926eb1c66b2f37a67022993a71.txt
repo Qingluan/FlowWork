@@ -1,0 +1,4 @@
+http://www.baidu.com
+INPUT.s_ipt#kw/I'龙芯'
+INPUT.s_btn_h#su/C
+[over]
