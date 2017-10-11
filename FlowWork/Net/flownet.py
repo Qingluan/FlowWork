@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementNotVisibleException
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, ElementNotVisibleException, WebDriverException
 from selenium.webdriver import  ActionChains
 
 from qlib.log import show
@@ -21,6 +21,8 @@ logging.basicConfig(level=logging.INFO)
 
 
 phantomjs_path = os.popen("which phantomjs").read().strip()
+chrome_path  = os.popen("which chromedriver").read().strip()
+firefox_path  = os.popen("which chromedriver").read().strip()
 if not phantomjs_path:
     show("install phantomjs first!!")
     sys.exit(1)
@@ -49,7 +51,7 @@ def test_proxy(proxy):
 
 class FLowNet:
     keys = Keys
-    def __init__(self, url=None, proxy=False, load_img=False, random_agent=False,agent=None,**options):
+    def __init__(self, url=None, proxy=False, load_img=False, driver=None, random_agent=False, agent=None,**options):
         
         if proxy:
             if not test_proxy(proxy):
@@ -79,8 +81,27 @@ class FLowNet:
                 '--cookies-file=' + cookies_path,
                 '--local-storage-quota=' + str(SocialKit_cache_max_size),
             ]
+        if driver:
 
-        self.phantom = webdriver.PhantomJS(phantomjs_path,service_args=web_service_args, desired_capabilities=dcap)
+            if 'chrome' in driver:
+                chrome_options = webdriver.ChromeOptions()
+                if proxy:
+                    chrome_options.add_argument('--proxy-server=%s' % proxy)
+                
+                if os.path.exists(driver):
+                    self.phantom = webdriver.Chrome(driver, chrome_options=chrome_options, service_args=web_service_args, desired_capabilities=dcap)
+                else:
+                    self.phantom = webdriver.Chrome(chrome_path, chrome_options=chrome_options, service_args=web_service_args, desired_capabilities=dcap)
+
+            elif 'fir' in driver:
+                if os.path.exists(driver):
+                    self.phantom = webdriver.Firefox(driver, service_args=web_service_args, desired_capabilities=dcap)
+        else:
+            self.phantom = webdriver.PhantomJS(phantomjs_path,service_args=web_service_args, desired_capabilities=dcap)
+
+
+        if 'width' in options:
+            self.phantom.set_window_size(options.get('width', 1024), options.get('height', 768))
         if timeout:
             self.phantom.set_page_load_timeout(int(timeout))
         self.dcap = dcap
@@ -407,8 +428,15 @@ class FLowNet:
         # actions area
         self.old_data = self.phantom.page_source
 
-        if len(args) == 1:   
-            target.send_keys(args[0])
+        if len(args) == 1:
+            try:
+                target.send_keys(args[0])
+            except WebDriverException as e:
+                show("input not work,may be no element focus,try action-chains mode ...", color='yellow')
+                ac = ActionChains(self.phantom)
+                if 'cannot focus element' in e.msg:
+                    ac.move_to_element(target).click().send_keys(args[0])
+
 
         elif len(args) == 0:
             if target.tag_name == 'a' and 'javascript' not in target.get_attribute("href"):
