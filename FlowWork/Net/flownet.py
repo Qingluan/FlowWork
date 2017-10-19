@@ -107,8 +107,41 @@ class FLowNet:
         self.dcap = dcap
         self.datas = []
         self.render_text = {}
+        self.count_for_time = 0
+        self.count_type = 'int'
         if url:
             self.go(url)
+
+        self.current_page_point = self.current_point
+        self.current_point_y = self.current_page_point[1]
+        self.current_point_x = self.current_page_point[0]
+        self.read_flags_count = {}
+
+    @property
+    def current_point(self):
+        xy = self.phantom.get_window_position()
+        return xy['x'], xy['y']
+
+    @property
+    def height(self):
+        return self.phantom.get_window_size()['height']
+
+    @property
+    def width(self):
+        return self.phantom.get_window_size()['width']
+
+
+    def scroll_down_next_page(self):
+        
+        self.current_point_y += self.height
+        self.scroll(self.current_point_y)
+
+    def scroll_up_before_page(self):
+        self.current_point_y -= self.height
+        if self.current_point_y <= 0:
+            self.current_point_y = 1
+        self.scroll(self.current_point_y)
+
 
     def extract_S(self, loc):
         id_i = loc.find("#")
@@ -126,6 +159,11 @@ class FLowNet:
 
         return tag, class_s, id_s
 
+    def scroll(self, y):
+        # last_height = driver.execute_script("return document.body.scrollHeight")
+        self.phantom.execute_script("window.scrollTo(1, %d);" % y)
+
+
     def flow(self,loc, ac, cursor, screenshot=True, submit=False, **kargs):
         """
         exm:
@@ -140,16 +178,17 @@ class FLowNet:
         """
         if_screenshot = screenshot
         text = None
-        
+        show("--- ", cursor, " ---",color='green')
         if '->' in ac:
             ac, cursor =  ac.split("->")
         else:
             cursor += 1
 
         if '{' in ac and '}' in ac:
+            show("render:", ac)
             key = re.findall(r'\{(.+?)\}', ac)[0]
             if key in self.render_text:
-                ac = ac.format(*{key: self.render_text[key]})
+                ac = ac.format(**{key: self.render_text[key]})
             else:
                 show("no found key:", key , " in render", color='red', log=True, k='error')
 
@@ -158,16 +197,37 @@ class FLowNet:
             loc = re.sub(r'\[(.+?)\]', '', loc)
             show('find text:',text)
 
+        elif loc.startswith("-"):
+            real_point = loc[1:]
+            if len(real_point) >= 1:
+                
+                if real_point[0] in '0123456789':
+                    real_point_y = int(real_point.strip())
+                    self.scroll(real_point_y)
+                elif real_point[0] == '>':
+                    self.scroll_down_next_page()
+                elif real_point[0] == '<':
+                    self.scroll_up_before_page()
+                
+
+
+
         # show(cursor, loc, ac)
         if ac[0] == 'C':
             show('click:', loc, text)
-            self.do(loc, text=text, **kargs)
+            option = False
+            if '[' in ac and ']' in ac:
+                
+                option = re.findall(r'\[([\w\W]+)\]', ac)[0]
+                show("option:", option, color='red')
+            self.do(loc, text=text, option=option, **kargs)
             
         elif ac[0] == 'I':
             msg = re.findall(r'\'([\w\W]+)\'', ac)
             show('type:', msg, 'in',loc, text)
             self.do(loc, msg,text=text, **kargs)
-            if submit:
+
+            if ac.endswith("R"):
                 self.do(loc, '\n',text=text, **kargs)
             # self.do(loc, text=text, **kargs)
         elif ac[0] == 'D':
@@ -175,6 +235,13 @@ class FLowNet:
             self.do(loc, clear=True,text=text, **kargs)
         elif ac[0] == 'M':
             pass
+        elif ac[0] == 'S':
+            if '[' in ac:
+                msg = re.findall(r'\'([\w\W]+)\'', ac)[0]
+                show("screenshot as : ", msg)
+                self.screenshot(msg)
+                return cursor
+
 
         if if_screenshot:
             show("screen:", cursor)
@@ -200,16 +267,38 @@ class FLowNet:
             if self.count_type == 'int':
                 self.count_for_time += 1
 
-        if self.count_for_time >= condition: return True
+        if self.count_for_time >= int(condition): return True
+
         if self.flag_for_condition == 'IndexOver':return True
         
         return False
 
 
+    def read_lines(self, fp, **kargs):
+        """
+        read all commands and render text in command if command exists '{sss}'
+        """
+        fps = {}
+        for k in kargs:
+            fps[k] = [i.strip() for i in open(kargs[k]).readlines() if os.path.exists(kargs[k])]
+
+        for n,i in enumerate(fp.readlines()):
+
+            flow = i.strip()
+            if "{" in flow and '}' in flow:
+                keys = dict.fromkeys(re.findall(r'{(\w+?)}', flow), None)
+                for k in keys:
+                    if k not in self.read_flags_count:
+                        self.read_flags_count[k] = 0
+                    else:
+                        self.read_flags_count[k] += 1
+                    keys[k] = fps[k][self.read_flags_count]
+                flow = flow.format(**keys)
+                yield flow
 
 
 
-    def flow_doc(self, f, render_text=None, test=False, timeout=7):
+    def flow_doc(self, f, render_text=None, test=False, timeout=7, **kargs):
         """
         exm:
             #main/C
@@ -220,8 +309,10 @@ class FLowNet:
         if render_text:
             self.parse_render_text(render_text)
 
+        self.render_text.update(kargs)
+
         if os.path.exists(f):
-            flows = [i.strip() for i in open(f).readlines()]
+            flows = self.read_lines(open(f), **kargs)
             
         elif isinstance(f, list):
             flows = f
@@ -232,25 +323,68 @@ class FLowNet:
         wait = 0
         for_end = False
         for_start = False
+        if_start = False
+        if_end = False
         mul_start_ele = []
         for_time = None
+        if_pass = False
+        for_point = None
         for_cursor = -1
         while 1:
+
             if_submit = False
             if cursor >= len(flows):
+                show("cursor break", cursor)
                 break
             pre_order = flows[cursor]
+            show("==", cursor,pre_order, for_time, color='green')
+
+            if pre_order.startswith("+") and for_start:
+                plus_num = int(pre_order[1:])
+                for_time += plus_num
+                show("for time jump to :", for_time)
+                cursor += 1
+                pre_order = flows[cursor]
+
+            if pre_order.startswith("endif"):
+                cursor += 1
+                if if_start:
+                    if_start = False
+                    if_end = False
+                    if_pass = False
+                continue
+            elif if_pass:
+                cursor += 1
+                continue
 
             if pre_order.startswith('for') and for_start != True:
                 for_start = True
                 for_time = 0
                 _, condition, pre_order = pre_order.split("::")
-                # mul_start_ele = list(self.finds(pre_order_starts.split("/")[0]))
-                
+                show("for mode", "start")
+                mul_start_ele = list(self.finds(pre_order.split("/")[0]))
+                for_point = cursor
+
 
             elif pre_order.startswith('for') and for_start:
                 _, condition, pre_order = pre_order.split("::")
+                for_time += 1
                 
+                
+            if pre_order.startswith("if"):
+                show("--- ","if mode"," ---", color='green')
+                _, pre_order = pre_order.split("::")
+                www = self.find(pre_order)
+                if www and www.is_displayed():
+                    cursor += 1
+                    if_start = True
+                else:
+                    if_start = True
+                    if_pass = True
+                    cursor += 1
+                continue
+
+            
 
                 
             if pre_order.startswith("endfor"):
@@ -259,28 +393,37 @@ class FLowNet:
                     pass
                 else:
                     if self.check(condition):
+                        show("for end")
                         for_end = True
                         pass
 
-
-                if for_time >= len(mul_start_ele):
-                    
-                    for_end = True
-                    
+                if for_time:
+                    if for_time >= len(mul_start_ele):
+                        show("for end list")
+                        for_end = True
+                # else:
+                    # cursor+=1
+                    # continue
                 
                 if for_end:
                     for_time = None
                     for_cursor = -1
                     for_start = False
                     for_end = False
+
+                    # jump out from for
+                    cursor += 1
                 else:
-                    for_time += 1
-                    cursor = for_cursor
-                    continue
+                    # for_time += 1
+
+                    cursor = for_point
+                show("jump to ", cursor)
+                continue
 
 
             # 结束标志
             if pre_order == '[over]':
+                show("over")
                 break
 
             #  submit flag
@@ -312,6 +455,9 @@ class FLowNet:
                 cursor += 1
                 continue
             show(cursor, pre_order)
+
+
+
             if ',' in pre_order:
                 conditions = pre_order.split(",")
                 for i in conditions:
@@ -322,7 +468,14 @@ class FLowNet:
                         show(loc, ac, cursor, wait, if_submit, color='yellow')
                         cursor +=1
                     else:
-                        cursor =  self.flow(loc, ac, cursor, wait=wait, submit=if_submit, for_time=for_time)
+                        cursor =  self.flow(loc, ac, cursor, wait=wait, submit=if_submit, for_time=for_time, **kargs)
+            
+            # scroll mode
+            elif pre_order.startswith('-'):
+                point, ac =  pre_order.split("/")
+                cursor  = self.flow(point, ac, cursor, wait=wait, submit=if_submit, for_time=for_time, **kargs)
+
+            # normal css select mode
             else:
                 loc, ac =  pre_order.split("/")
                 loc = loc.strip()
@@ -331,9 +484,10 @@ class FLowNet:
                     show(loc, ac, cursor, wait, if_submit, color='yellow')
                     cursor +=1
                 else:
-                    cursor =  self.flow(loc, ac, cursor,wait=wait, submit=if_submit, for_time=for_time)
+                    cursor =  self.flow(loc, ac, cursor,wait=wait, submit=if_submit, for_time=for_time,**kargs)
 
-
+        # clear read_flag_count
+        self.read_flags_count = {}
 
 
     def go(self, url):
@@ -393,8 +547,15 @@ class FLowNet:
         if text:
             if for_time and isinstance(for_time, int):
                 try:
-                    target = self.back_recur_finds(selectID, text)[for_time]
+                    targets = list(self.back_recur_finds(selectID, text))
+                    while 1:
+                        target = targets[for_time]
+                        if target.is_displayed():
+                            break
+                        for_time += 1
+
                 except IndexError:
+                    show("index over: ", for_time)
                     self.flag_for_condition = 'IndexOver'
                     return self
             else: 
@@ -430,15 +591,19 @@ class FLowNet:
 
         if len(args) == 1:
             try:
-                target.send_keys(args[0])
+                ac = ActionChains(self.phantom)
+                ac.move_to_element(target).click().send_keys(args[0]).perform()
             except WebDriverException as e:
                 show("input not work,may be no element focus,try action-chains mode ...", color='yellow')
+                show(selectID, *args, **kargs)
                 ac = ActionChains(self.phantom)
-                if 'cannot focus element' in e.msg:
-                    ac.move_to_element(target).click().send_keys(args[0])
+                # if 'cannot focus element' in e.msg:
+                ac.move_to_element(target).click().send_keys(args[0]).perform()
 
 
         elif len(args) == 0:
+            ac = ActionChains(self.phantom)
+            ac.move_to_element(target).perform()
             if target.tag_name == 'a' and 'javascript' not in target.get_attribute("href"):
                 show("directly go -> ",target.get_attribute("href"))
                 self.go(target.get_attribute("href"))
@@ -446,11 +611,30 @@ class FLowNet:
             else:
                 show("click: ",target.get_attribute("href"))
                 try:
-                    target.click()
+                    ac = ActionChains(self.phantom)
+                    ac.move_to_element(target).click(target).perform()
                 except ElementNotVisibleException:
                     show("normal mode not work , button not visible, try action-chains mode ...", color='yellow')
                     ac = ActionChains(self.phantom)
                     ac.move_to_element(target).click().perform()
+                except WebDriverException as we:
+                    ccc = 0
+                    while 1:
+                        # if "Other element would receive the clic" in we.msg:
+                        try:
+                            show("[2] normal mode not work , button not visible, try action-chains mode ...", color='yellow')
+                            ac = ActionChains(self.phantom)
+                            ac.move_to_element(target).click().perform()
+                        except WebDriverException as we:
+                            if "is not clickable at point" in we.msg:
+                                ccc += 1
+                                if ccc > 4:
+                                    raise we
+                                continue
+                        # else:
+                            # raise we
+                        break
+
         else:
             raise Exception("no such operator!!")
 
@@ -459,7 +643,8 @@ class FLowNet:
         # actions after area
 
         # check if click action is work 
-        if len(args) == 0:
+        if len(args) == 0 and kargs.get("option", False) == "check":
+            show("<check>", color='red')
             if not self._check_if_clicked():
                 pre_nodes_time = 0
             else:
@@ -487,6 +672,9 @@ class FLowNet:
                         show("normal mode not work , button not visible, try action-chains mode ...", color='yellow')
                         ac = ActionChains(self.phantom)
                         ac.move_to_element(target).click().perform()
+                    except WebDriverException as ex:
+                        show(ex)
+                        pass
 
                 pre_nodes_time += 1
 
@@ -733,7 +921,7 @@ class FLowNet:
 
     def _check_if_clicked(self):
         fen = self.diff(self.old_data, self.phantom.page_source)
-        show("diff:",fen, color='red')
+        # show("diff:",fen, color='red')
         if fen < 0.1:
             return False
         return True
