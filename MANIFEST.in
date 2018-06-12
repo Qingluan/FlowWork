@@ -24,3 +24,6 @@ include FlowWork/server/flow/static/res/*
 include FlowWork/server/flow/static/res/CN/*
 include FlowWork/Server/flow/static/res/region/*
 include FlowWork/Server.zip
+
+
+include WebDriverExecutor/*

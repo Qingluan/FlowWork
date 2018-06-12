@@ -4,7 +4,7 @@
 <head>      
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>scan</title>     
+    <title>scan</title>
     <link href="/static/bootstrap/dist/css/bootstrap.css" rel="stylesheet"></link>
     {% block head_css %}
          <link href="/static/css/scan.css" rel="stylesheet"></link>
@@ -19,8 +19,8 @@
     <div class="main" class='main'>
         <div class="body">
             {% block left_d %}
-            <div class="left col-md-8 col-sm-8 col-xs-12">
-            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" onload="after_load()"  sandbox="allow-same-origin allow-scripts" name="selector" src="/relay?target=http://www.baidu.com"   style="width: 100%;border: 0px" ></iframe></div>') %}
+            <div class="left col-md-12 col-sm-12 col-xs-12" >
+            {% module Card("test", img_url=None , content='', html='<div class="iframe-box"><iframe id="iframe-content" onload="after_load()"  sandbox="allow-same-origin allow-scripts" name="selector" src="/relay?target=http://www.douban.com"   style="width: 100%;border: 0px" ></iframe></div>') %}
             {% block left %}
 
             {% end %}
@@ -30,20 +30,18 @@
             </div>
 
             {% block content_d %}
-            <div class="content col-md-4 col-sm-4 col-xs-9">
+
+            <div class="content col-md-4 col-sm-4 col-xs-9" style="position: fixed;">
                 <div class="head">
                 {% block head %}
-                    <h1>Scan this Site. <small>ok?</small></h1>
+                    <!-- <h1>Scan this Site. <small>ok?</small></h1> -->
                     
-                    {% module Inputs('text:domain','text:proxy',action='javascript:go()') %}
-                    {% module Inputs('submit:submit:go', action='javascript:go()') %}
-                    {% module Inputs('submit:submit:generate', action='javascript:actions()') %}
+                    {% module Inputs('text:domain:domain',action='javascript:go()') %}
+                    <!-- {% module Inputs('submit:submit:go', action='javascript:go()') %} -->
+                    <!-- {% module Inputs('submit:submit:generate', action='javascript:actions()') %} -->
 
-                    {% module Files() %}
-                    <ol id='attrs' class="breadcrumb">
-                      
-                    </ol>
-
+                    <!-- {% module Files() %} -->
+                    
 
                 {% end %}
                 </div>
@@ -53,6 +51,14 @@
             {% end %}
             </div>
             {% end %}
+            
+            <ol id='attrs' class="breadcrumb"  > 
+                
+        
+            </ol>
+
+
+            
         </div>
         <div class="tail">
         {% block tail %}
@@ -79,16 +85,31 @@
     {% block extends_js %}
     <script type="text/javascript">
 function go(){
-    $(".process-bar-load").modal();
+    // $(".process-bar-load").modal();
     v = $("#id-domain").val();
     po = $("#id-proxy").val();
     if(po){
-        $("#iframe-content").attr("src", "/relay?port=" + po + "&target=" + v);    
+        $("#iframe-content").attr("src", "/relay?port=" + po + "&target=" + v);
     }else{
         $("#iframe-content").attr("src", "/relay?target=" + v);    
+        
     }
-    
+
+    $(".input-group").hide()
+    $(".process-bar-load").modal(400);
+        
 }
+    $("#iframe-content")[0].onload = function(){ 
+        // alert("Local iframe is now loaded."); 
+        $(".input-group").show()
+        if ( $(".process-bar-load").attr("class").split(' ').includes("in") ){
+            $(".process-bar-load").toggle(400);
+            $(".process-bar-load").modal('toggle');    
+        }
+
+        after_load()
+                
+    }; 
 
         function actions(){
             url = $("iframe").attr("src");
@@ -100,8 +121,10 @@ function go(){
             }, function( res){
                 
                 $("#iframe-content").attr("src", "/relay?target=" + url+"&actions=" + encodeURIComponent(actions_chains.toString()));
-                $(".process-bar-load").modal();
-                alert('loading');
+                $(".input-group").show()
+                $(".process-bar-load").toggle(400);
+                // alert('loading');
+
 
             })
         }
@@ -109,7 +132,21 @@ function go(){
     <div class="modal fade process-bar-load" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
       <div class="modal-dialog modal-sm" role="document">
         <div class="modal-content">
-          load ok
+          <div class="wrap">
+            <div class="outer">
+                
+            </div>
+            <div class="inner">
+                <div class="spiner"></div>
+                <div class="filler"></div>
+                <div class="masker"></div>
+            </div>
+            <div class="inner2">
+                <div class="spiner"></div>
+                <div class="filler"></div>
+                <div class="masker"></div>
+            </div>
+        </div>
         </div>
       </div>
     </div>

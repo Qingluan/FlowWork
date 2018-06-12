@@ -6,19 +6,34 @@
 var actions_chains = []
 
 function get_path(e){
-    s = $(e)
-    vid = s.attr("id");
-    vclass = s.attr("class");
+
+    s = e.parentElement
+    vid = null
+    vclass = null
+    if (s.hasOwnProperty("id")){
+        vid = s.id
+    }
+    
+    if (s.hasOwnProperty("class")){
+        vclass = s.class
+    }
+
     vname = s.tagName
-    if (vid != ""){
+
+    // console.log(vname+ "." + vclass + "#" + vid)
+    all_null = true;
+
+    if (vid != null && vid != "undefined"){
         vname = vname + "#" + vid;
+        all_null = false;
     }
 
-    if (vclass != ""){
+    if (vclass != null && vclass != "undefined" ){
         vname = vname + "." + vclass;   
+        all_null = false;
     }
-
-    if (vid == '' && vclass == ''){
+    console.log(vname)
+    if (all_null = true){
         return get_path(e.parentElement) + ">" + vname;
     }else{
         return vname;
@@ -27,9 +42,9 @@ function get_path(e){
 
 
 function after_load(){
-    $(".process-bar-load").modal();
+    // $(".process-bar-load").modal();
     $(window.frames[0].document).click(function(e){
-        console.log(e.target)
+        // console.log(e.target)
         s = $(e.target)
         idv = s.attr('id') ? "#" + s.attr('id') : ""
         clvs = s.attr('class') ? s.attr("class").split(" ") : []
@@ -95,19 +110,22 @@ function after_load(){
 
         if (tmp == false){
             actions_chains.push(ac)
-            $("#attrs").append("<li>" + ac  + "</li>");
+            $("#attrs").append("<li><button class='btn btn-default'>" + ac  + "</button></li>");
         }
     })
 
     $(window.frames[0].document).find("a").click(function(e){
         console.log(e.target)
+
         s = $(e.target)
         idv = s.attr('id') ? "#" + s.attr('id') : ""
+        // alert(idv)
         tv = e.target.tagName
         clvs = s.attr('class') ? s.attr("class").split(" ") : []
         clv = ''
+        // alert(clvs)
         
-        parent = ''
+        parent = e.target.parentElement.tagName;
 
         if (clvs.length > 0){
             clv = '.' + clvs[0]
@@ -132,13 +150,16 @@ function after_load(){
         
 
         tv = e.target.tagName
+
         sele_css = tv  + clv + idv
+
         if (parent != ""){
             sele_css = parent+">" + sele_css;
         }
 
         if (idv == "" && clv == ""){
             sele_css = get_path(e.target.parentElement) + ">" + sele_css;
+            alert(sele_css);
         }
 
         
@@ -162,7 +183,7 @@ function after_load(){
 
         if (tmp == false){
             actions_chains.push(ac)
-            $("#attrs").append("<li>" + ac  + "</li>");
+            $("#attrs").append("<li><button class='btn btn-default'>" + ac  + "</button></li>");
         }
     })
     // $(window.frames[0].document).find("input")
@@ -230,7 +251,7 @@ function after_load(){
 
         if (tmp == false){
             actions_chains.push(ac)
-            $("#attrs").append("<li>" + ac  + "</li>");
+            $("#attrs").append("<li><button class='btn btn-default'>" + ac  + "</button></li>");
 
         }
     })
